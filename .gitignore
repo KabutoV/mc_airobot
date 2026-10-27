@@ -1,0 +1,6 @@
+.gradle/
+build/
+run/
+out/
+libs/*.jar
+windows/controller.properties

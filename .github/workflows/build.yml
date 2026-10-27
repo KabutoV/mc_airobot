@@ -1,0 +1,62 @@
+name: Build Forge client mod
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Download verified official Baritone dependency
+        shell: bash
+        run: |
+          mkdir -p libs
+          curl --fail --location --retry 3 \
+            --output libs/baritone-api-forge-1.10.5.jar \
+            https://github.com/cabaletta/baritone/releases/download/v1.10.5/baritone-api-forge-1.10.5.jar
+          echo "36915642c33c21c9225f89e0c1c53804c4231c72  libs/baritone-api-forge-1.10.5.jar" | sha1sum --check --strict
+
+      - name: Validate PowerShell scripts
+        shell: pwsh
+        run: |
+          $failed = $false
+          Get-ChildItem windows -Filter *.ps1 | ForEach-Object {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors)
+            if ($errors.Count -gt 0) {
+              $failed = $true
+              $errors | ForEach-Object { Write-Error "$($_.Extent.File):$($_.Extent.StartLineNumber): $($_.Message)" }
+            }
+          }
+          if ($failed) { exit 1 }
+
+      - name: Build
+        run: ./gradlew build
+
+      - name: Assemble Windows package
+        shell: bash
+        run: |
+          mkdir -p package/mods package/controller
+          cp build/libs/mc_ai_controller-0.1.0.jar package/mods/
+          cp libs/baritone-api-forge-1.10.5.jar package/mods/
+          cp windows/controller.ps1 windows/start-controller.bat windows/backup-before-install.ps1 package/controller/
+          cp README.md LICENSE package/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mc-ai-controller-windows-0.1.0
+          path: package
+          if-no-files-found: error

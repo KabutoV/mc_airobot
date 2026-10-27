@@ -1,0 +1,82 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:6.0.+'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'maven-publish'
+
+version = mod_version
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+minecraft {
+    mappings channel: 'official', version: minecraft_version
+    copyIdeResources = true
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.console.level', 'debug'
+            mods {
+                mc_ai_controller { source sourceSets.main }
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir { dirs 'libs' }
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    compileOnly files('libs/baritone-api-forge-1.10.5.jar')
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+        minecraft_version: minecraft_version,
+        forge_version: forge_version,
+        mod_version: mod_version,
+        mod_id: mod_id
+    ]
+    inputs.properties replaceProperties
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }
+}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+            'Specification-Title': mod_id,
+            'Specification-Vendor': 'mc-ai-controller',
+            'Specification-Version': '1',
+            'Implementation-Title': project.name,
+            'Implementation-Version': project.jar.archiveVersion,
+            'Implementation-Vendor': 'mc-ai-controller'
+        ])
+    }
+    finalizedBy 'reobfJar'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 17
+}
