@@ -25,27 +25,28 @@ if (-not $GameDir) {
 }
 
 if (-not $GameDir) {
-    $GameDir = Read-Host '请输入整合包游戏目录（例如 D:\mc\.minecraft\versions\Bounty Hunter）'
+    $GameDir = Read-Host 'Enter the Minecraft game directory'
     [System.IO.File]::WriteAllText($configPath, "gameDir=$GameDir`r`n", [System.Text.UTF8Encoding]::new($false))
 }
 
 $bridgeConfigPath = Join-Path $GameDir 'config\mc_ai_controller.properties'
 if (-not (Test-Path -LiteralPath $bridgeConfigPath)) {
-    throw "找不到 $bridgeConfigPath。请先安装模组、启动游戏并进入主菜单一次。"
+    throw "Cannot find $bridgeConfigPath. Start Minecraft with the bridge mod once first."
 }
 
 $bridge = Read-SimpleProperties $bridgeConfigPath
 $port = [int]$bridge['port']
 $token = $bridge['token']
 if (-not $port -or -not $token) {
-    throw '桥接配置缺少 port 或 token。请删除该配置并重新启动一次游戏。'
+    throw 'Bridge config is missing port or token. Delete it and restart Minecraft once.'
 }
 
 Write-Host ''
-Write-Host 'MC AI Controller 第一版已启动。'
-Write-Host '支持：前往坐标 100 70 -200 / 跟随玩家 Mc_kuailewang / 停止任务'
-Write-Host 'F8：游戏内紧急停止；解除后请输入：解除急停'
-Write-Host '输入 exit 只退出控制器（退出前会先发送停止任务）。'
+Write-Host 'MC AI Controller v0.1.0 is ready.'
+Write-Host 'Examples: go to 100 70 -200 / follow player Mc_kuailewang / stop'
+Write-Host 'Chinese commands are also supported.'
+Write-Host 'F8: emergency stop. Type resume or unlock to clear the emergency lock.'
+Write-Host 'Type exit to stop the task and close this controller.'
 Write-Host ''
 
 function Send-Command([string]$Command) {
@@ -66,18 +67,18 @@ function Send-Command([string]$Command) {
 }
 
 while ($true) {
-    $command = Read-Host '你'
+    $command = Read-Host 'You'
     if ([string]::IsNullOrWhiteSpace($command)) { continue }
     if ($command -eq 'exit' -or $command -eq 'quit') {
-        try { [void](Send-Command '停止任务') } catch {}
+        try { [void](Send-Command 'stop') } catch {}
         break
     }
     try {
         $response = Send-Command $command
-        Write-Host "控制器：$response"
+        Write-Host "Controller: $response"
     }
     catch {
-        Write-Host "控制器：无法连接 Minecraft：$($_.Exception.Message)" -ForegroundColor Red
-        Write-Host '请确认 Minecraft 已启动，并检查 logs\latest.log 中的 “MC AI Controller listening”。'
+        Write-Host "Controller: Cannot connect to Minecraft: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host 'Keep Minecraft running and check latest.log for MC AI Controller listening.'
     }
 }

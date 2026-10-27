@@ -19,4 +19,4 @@ if (Test-Path -LiteralPath $options) {
     Copy-Item -LiteralPath $options -Destination $backupRoot
 }
 
-Write-Host "备份完成：$backupRoot"
+Write-Host "Backup complete: $backupRoot"

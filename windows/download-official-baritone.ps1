@@ -8,6 +8,6 @@ Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $destination
 $actualSha1 = (Get-FileHash -LiteralPath $destination -Algorithm SHA1).Hash.ToLowerInvariant()
 if ($actualSha1 -ne $expectedSha1) {
     Remove-Item -LiteralPath $destination
-    throw "Baritone 校验失败。期望 $expectedSha1，实际 $actualSha1。文件已删除。"
+    throw "Baritone checksum failed. Expected $expectedSha1, actual $actualSha1. The file was deleted."
 }
-Write-Host "Baritone 官方文件下载并校验成功：$destination"
+Write-Host "Official Baritone file downloaded and verified: $destination"
